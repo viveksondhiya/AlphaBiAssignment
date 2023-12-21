@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AlphaBi Giphy Search System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+          crossorigin="anonymous">
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:weight@100;200;300;400;500;600;700;800&display=swap");
+
+        body {
+            background-color: #eee;
+            font-family: "Poppins", sans-serif;
+            font-weight: 300;
+        }
+
+        .height {
+            height: 100vh;
+        }
+
+        .search {
+            position: relative;
+            box-shadow: 0 0 40px rgba(51, 51, 51, .1);
+        }
+
+        .search input {
+            height: 60px;
+            text-indent: 25px;
+            border: 2px solid #d6d4d4;
+        }
+
+        .search input:focus {
+            box-shadow: none;
+            border: 2px solid blue;
+        }
+
+        .search .fa-search {
+            position: absolute;
+            top: 20px;
+            left: 16px;
+        }
+
+        .search button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            height: 50px;
+            width: 110px;
+            background: blue;
+        }
+
+        #gif-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .gif-item {
+            margin: 10px;
+        }
+
+        .gif-item img {
+            max-width: 200px;
+            max-height: 200px;
+        }
+
+        .pagination {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">AlphaBi Giphy Search  System</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" th:href="@{/register}">Register</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" th:href="@{/result}">Search</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" th:href="@{/logout}">Logout</a>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <div class="row height d-flex justify-content-center align-items-center">
+        <div class="col-md-8">
+            <div class="search">
+                <i class="fa fa-search"></i>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search Anime">
+                <button class="btn btn-primary" onclick="searchGif()">Search</button>
+            </div>
+            <div id="gif-container"></div>
+            <nav id="pagination" class="pagination"></nav>
+        </div>
+    </div>
+</div>
+
+<script>
+    let offset = 0;
+
+    function searchGif() {
+        offset = 0;
+        loadGifs();
+    }
+
+    function loadMore() {
+        offset += 3;
+        loadGifs();
+    }
+
+    function loadGifs() {
+        const apiKey = 'GlVGYHkr3WSBnllca54iNt0yFbjz7L65';
+        const searchInput = document.getElementById('searchInput').value;
+        const gifContainer = document.getElementById('gif-container');
+        const paginationContainer = document.getElementById('pagination');
+
+        // Clear previous results
+        gifContainer.innerHTML = '';
+        paginationContainer.innerHTML = '';
+
+        // Make API request
+        fetch(`https://api.giphy.com/v1/gifs/search?q=${searchInput}&api_key=${apiKey}&limit=3&offset=${offset}`)
+            .then(response => response.json())
+            .then(data => {
+                // Display GIFs
+                data.data.forEach(gif => {
+                    const gifItem = document.createElement('div');
+                    gifItem.classList.add('gif-item');
+                    const img = document.createElement('img');
+                    img.src = gif.images.fixed_height.url;
+                    gifItem.appendChild(img);
+                    gifContainer.appendChild(gifItem);
+                });
+
+                // Show pagination
+                const totalPages = Math.ceil(data.pagination.total_count / 3);
+                const currentPage = Math.ceil((offset + 1) / 3);
+
+                const pagination = document.createElement('nav');
+                pagination.classList.add('pagination');
+
+                const paginationList = document.createElement('ul');
+                paginationList.classList.add('pagination');
+
+                const previousItem = document.createElement('li');
+                previousItem.classList.add('page-item');
+                if (currentPage === 1) {
+                    previousItem.classList.add('disabled');
+                }
+                const previousLink = document.createElement('a');
+                previousLink.classList.add('page-link');
+                previousLink.href = '#';
+                previousLink.textContent = 'Previous';
+                previousLink.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        offset -= 3;
+                        loadGifs();
+                    }
+                });
+                previousItem.appendChild(previousLink);
+                paginationList.appendChild(previousItem);
+
+                for (let i = currentPage; i < currentPage + 3 && i <= totalPages; i++) {
+                    const pageItem = document.createElement('li');
+                    pageItem.classList.add('page-item');
+                    if (i === currentPage) {
+                        pageItem.classList.add('active');
+                    }
+                    const pageLink = document.createElement('a');
+                    pageLink.classList.add('page-link');
+                    pageLink.href = '#';
+                    pageLink.textContent = i;
+                    pageLink.addEventListener('click', () => {
+                        offset = (i - 1) * 3;
+                        loadGifs();
+                    });
+                    pageItem.appendChild(pageLink);
+                    paginationList.appendChild(pageItem);
+                }
+
+                const nextItem = document.createElement('li');
+                nextItem.classList.add('page-item');
+                if (currentPage === totalPages) {
+                    nextItem.classList.add('disabled');
+                }
+                const nextLink = document.createElement('a');
+                nextLink.classList.add('page-link');
+                nextLink.href = '#';
+                nextLink.textContent = 'Next';
+                nextLink.addEventListener('click', () => {
+                    if (currentPage < totalPages) {
+                        offset += 3;
+                        loadGifs();
+                    }
+                });
+                nextItem.appendChild(nextLink);
+                paginationList.appendChild(nextItem);
+
+                pagination.appendChild(paginationList);
+                paginationContainer.appendChild(pagination);
+            })
+            .catch(error => console.error('Error fetching GIFs:', error));
+    }
+</script>
+
+</body>
+</html>
